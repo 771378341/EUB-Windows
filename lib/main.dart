@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui' show PointerDeviceKind;
 import 'package:video_player_media_kit/video_player_media_kit.dart';
 import 'desktop/app_window.dart';
+import 'desktop/windows_media_kit_video_player.dart';
 import 'desktop/desktop_shortcuts.dart';
 import 'package:flutter/services.dart';
 import 'common/app_theme.dart';
@@ -45,6 +46,7 @@ Future<void> main() async {
 
   if (AppWindow.isWindows) {
     VideoPlayerMediaKit.ensureInitialized(windows: true);
+    WindowsMediaKitVideoPlayer.registerWith();
     await AppWindow.initialize();
   }
 
