@@ -45,6 +45,7 @@ void main() {
         await tester.tap(find.byKey(const ValueKey('desktop-player-more')));
         await tester.pumpAndSettle();
         expect(find.text('弹幕设置'), findsOneWidget);
+        expect(tester.getRect(find.text('选集')).bottom, lessThanOrEqualTo(size.height));
         await tester.tap(find.text('选集'));
         await tester.pumpAndSettle();
         expect(selections, 1);

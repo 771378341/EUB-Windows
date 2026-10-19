@@ -341,6 +341,7 @@ class _PlayerBottomBarState extends State<PlayerBottomBar> {
                 onTap: widget.onToggleDanmaku, compact: true),
           SizedBox(width: 32, height: 32, child: PopupMenuButton<String>(
             key: const ValueKey('desktop-player-more'),
+            menuPadding: EdgeInsets.zero,
             tooltip: '更多播放操作',
             padding: EdgeInsets.zero,
             icon: const Icon(Icons.more_horiz, size: 20, color: Colors.white),
@@ -354,14 +355,14 @@ class _PlayerBottomBarState extends State<PlayerBottomBar> {
               }
             },
             itemBuilder: (_) => [
-              PopupMenuItem(value: 'speed', child: Text('倍速 ${widget.currentSpeed}x')),
+              PopupMenuItem(height: 28, value: 'speed', child: Text('倍速 ${widget.currentSpeed}x')),
               if (widget.onScale != null)
-                PopupMenuItem(value: 'scale', child: Text('画面比例 · ${widget.scaleLabel}')),
+                PopupMenuItem(height: 28, value: 'scale', child: Text('画面比例 · ${widget.scaleLabel}')),
               if (widget.onOpenDanmakuSettings != null)
-                const PopupMenuItem(value: 'danmaku', child: Text('弹幕设置')),
+                const PopupMenuItem(height: 28, value: 'danmaku', child: Text('弹幕设置')),
               if (widget.onOpenEpisodes != null)
-                const PopupMenuItem(value: 'episodes', child: Text('选集')),
-              const PopupMenuItem(value: 'fullscreen', child: Text('切换全屏')),
+                const PopupMenuItem(height: 28, value: 'episodes', child: Text('选集')),
+              const PopupMenuItem(height: 28, value: 'fullscreen', child: Text('切换全屏')),
             ],
           )),
         ]),
