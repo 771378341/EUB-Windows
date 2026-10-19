@@ -1,0 +1,436 @@
+import '../tv/tv_controls.dart';
+
+import 'package:flutter/material.dart';
+
+import '../common/app_theme.dart';
+import '../models/film_models.dart';
+import '../api/film_api.dart';
+import '../api/http_client.dart';
+import '../utils/source_guard.dart';
+import '../utils/favorite_manager.dart';
+import '../components/loading_view.dart';
+import '../components/empty_state.dart';
+import '../components/filter_bar.dart';
+import '../tv/tv_catalogue_grid.dart';
+import '../tv/tv_home_design.dart';
+
+const int _pageSize = 24;
+
+/// 片库分类筛选。布局参考 EcoTV `views/filter`，逻辑对齐 OHOS `FilterPage.ets`。
+class FilterPage extends StatefulWidget {
+  final String pid;
+  final String category;
+  final String sort;
+
+  const FilterPage({
+    super.key,
+    required this.pid,
+    this.category = '',
+    this.sort = '',
+  });
+
+  @override
+  State<FilterPage> createState() => _FilterPageState();
+}
+
+class _FilterPageState extends State<FilterPage> {
+  String _pid = '';
+  String _titleName = '片库';
+  List<MovieBasicInfo> _films = [];
+  int _total = 0, _current = 1, _pageCount = 1;
+  bool _loading = true,
+      _listLoading = false,
+      _loadingMore = false,
+      _fetchLock = false;
+  String _errorText = '';
+
+  List<String> _sortList = [], _titleKeys = [], _titles = [], _tagKeys = [];
+  List<List<String>> _tagNames = [], _tagValues = [];
+
+  final Map<String, String> _selected = {};
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    FavoriteManager.preload();
+    _pid = widget.pid;
+    HttpClient.instance.trackView(
+      'classify',
+      _pid,
+      'FilterPage',
+      '',
+      widget.category,
+    );
+    if (widget.category.isNotEmpty) _selected['Category'] = widget.category;
+    if (widget.sort.isNotEmpty) _selected['Sort'] = widget.sort;
+    _scrollController.addListener(_onScroll);
+    SourceGuard.onReconnect(_onReconnect);
+    _loadData(true);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    SourceGuard.offReconnect(_onReconnect);
+    super.dispose();
+  }
+
+  void _onReconnect() => _loadData(true);
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      if (!_loadingMore && _current < _pageCount) {
+        _loadData(false);
+      }
+    }
+  }
+
+  Map<String, dynamic> _buildQuery(int page) {
+    final query = <String, dynamic>{
+      'Pid': _pid,
+      'current': page,
+      'pageSize': _pageSize,
+    };
+    _selected.forEach((k, v) {
+      if (v.isNotEmpty) query[k] = v;
+    });
+    return query;
+  }
+
+  String _selectedOf(String key) => _selected[key] ?? '';
+
+  String _selectedFor(String key) {
+    final value = _selectedOf(key);
+    return (key == 'Sort' && value.isEmpty) ? 'update_stamp' : value;
+  }
+
+  bool _isChipOn(String key, String value) => _selectedFor(key) == value;
+
+  void _pick(String key, String value) {
+    if (_isChipOn(key, value) || _fetchLock) return;
+    setState(() => _selected[key] = value);
+    if (key == 'Category') {
+      HttpClient.instance.trackView('classify', _pid, 'FilterPage', '', value);
+    }
+    _loadData(true);
+    _scrollToTop();
+  }
+
+  void _scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  void _applyParams(List<String> keys, List<String> values) {
+    for (var i = 0; i < keys.length; i++) {
+      final k = keys[i];
+      final v = i < values.length ? values[i] : '';
+      if (v.isEmpty) continue;
+      _selected[k] = v;
+    }
+  }
+
+  Future<void> _loadData(bool reset, {bool fromPull = false}) async {
+    if (_pid.isEmpty) {
+      setState(() {
+        _errorText = '缺少分类信息';
+        _loading = false;
+        _listLoading = false;
+      });
+      return;
+    }
+    final page = reset ? 1 : _current + 1;
+    if ((!reset && (_loadingMore || page > _pageCount)) || _fetchLock) return;
+
+    _fetchLock = true;
+    if (reset) {
+      if (fromPull) {
+        setState(() => _listLoading = false);
+      } else if (_sortList.isEmpty) {
+        setState(() {
+          _films = [];
+          _loading = true;
+          _listLoading = false;
+          _errorText = '';
+        });
+      } else {
+        setState(() {
+          _listLoading = true;
+          _loading = false;
+          _errorText = '';
+        });
+      }
+    } else {
+      setState(() => _loadingMore = true);
+    }
+
+    var ok = false;
+    try {
+      final res = await FilmApi.getFilter(_buildQuery(page));
+      if (!mounted) return;
+      setState(() {
+        _titleName = res.titleName.isNotEmpty ? res.titleName : '片库';
+        _total = res.page.total;
+        _current = res.page.current;
+        _pageCount = res.page.pageCount;
+        _films = reset ? res.list : [..._films, ...res.list];
+        _sortList = res.search.sortList;
+        _titleKeys = res.search.titleKeys;
+        _titles = res.search.titles;
+        _tagKeys = res.search.tagKeys;
+        _tagNames = res.search.tagNames;
+        _tagValues = res.search.tagValues;
+        if (reset) _applyParams(res.paramKeys, res.params);
+        _errorText = _titleName.isNotEmpty ? '' : '当前分类已失效';
+        ok = _errorText.isEmpty;
+      });
+      if (reset) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) _scrollController.jumpTo(0);
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      if (reset) {
+        setState(() => _errorText = '$e');
+      }
+    } finally {
+      _fetchLock = false;
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _listLoading = false;
+          _loadingMore = false;
+        });
+      }
+      if (fromPull && ok && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('已更新')));
+      }
+    }
+  }
+
+  String _titleOf(String key) {
+    final index = _titleKeys.indexOf(key);
+    return index >= 0 ? _titles[index] : key;
+  }
+
+  List<String> _namesOf(String key) {
+    final index = _tagKeys.indexOf(key);
+    return index >= 0 ? _tagNames[index] : [];
+  }
+
+  List<String> _valuesOf(String key) {
+    final index = _tagKeys.indexOf(key);
+    return index >= 0 ? _tagValues[index] : [];
+  }
+
+  /// 行顺序：sortList，再补 tags 里有选项但 sortList 没列的键（类型/剧情/地区等）。
+  List<String> _rowKeys() {
+    final available = {
+      for (final k in [..._tagKeys, ..._sortList])
+        if (_namesOf(k).isNotEmpty) k,
+    };
+    final keys = <String>[];
+    void add(String k) {
+      if (available.contains(k) && !keys.contains(k)) keys.add(k);
+    }
+
+    for (final k in [
+      ..._sortList,
+      'Category',
+      'Plot',
+      'Area',
+      'Language',
+      'Year',
+      'Sort',
+      ...available,
+    ]) {
+      add(k);
+    }
+    return keys;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final m = TvHomeMetrics(MediaQuery.sizeOf(context).width), scale = m.scale;
+    final rows = _rowKeys();
+    Widget body;
+    if (_loading) {
+      body = const LoadingView(label: '加载中');
+    } else if (_errorText.isNotEmpty) {
+      body = EmptyState(
+        title: '加载失败',
+        subtitle: _errorText,
+        icon: Icons.info_outline_rounded,
+        action: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _ActionPill(
+              icon: Icons.link_rounded,
+              label: '更换软件源',
+              accent: true,
+              onTap: () => Navigator.pushNamed(context, '/server_config'),
+            ),
+            const SizedBox(height: 12),
+            _ActionPill(
+              icon: Icons.refresh_rounded,
+              label: '刷新',
+              accent: false,
+              onTap: () => _loadData(true),
+            ),
+          ],
+        ),
+      );
+    } else {
+      body = RefreshIndicator(
+        onRefresh: () => _loadData(true, fromPull: true),
+        color: AppTheme.accent,
+        backgroundColor: AppTheme.bgCard,
+        child: TvCatalogueGrid(
+          films: _films,
+          controller: _scrollController,
+          filters: rows.isEmpty
+              ? null
+              : FilterBar(
+                  key: const ValueKey('tv-catalogue-filters'),
+                  compact: true,
+                  keys: rows,
+                  titleOf: _titleOf,
+                  namesOf: _namesOf,
+                  valuesOf: _valuesOf,
+                  selectedOf: _selectedFor,
+                  onPick: _pick,
+                ),
+        ),
+      );
+    }
+    return Scaffold(
+      backgroundColor: AppTheme.bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            SizedBox(
+              key: const ValueKey('tv-catalogue-toolbar'),
+              height: 44 * scale,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: m.edge),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 30 * scale,
+                      height: 30 * scale,
+                      child: IconButton(
+                        tooltip: '返回',
+                        padding: EdgeInsets.zero,
+                        constraints: BoxConstraints.tightFor(
+                          width: 30 * scale,
+                          height: 30 * scale,
+                        ),
+                        style: IconButton.styleFrom(
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        icon: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 20 * scale,
+                        ),
+                        onPressed: () => Navigator.maybePop(context),
+                      ),
+                    ),
+                    SizedBox(width: 10 * scale),
+                    Expanded(
+                      child: Text(
+                        _titleName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15 * scale,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (_loadingMore || _listLoading)
+                      Padding(
+                        padding: EdgeInsets.only(right: 10 * scale),
+                        child: SizedBox(
+                          width: 12 * scale,
+                          height: 12 * scale,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      ),
+                    if (_total > 0)
+                      Text(
+                        '共 $_total 部',
+                        style: TextStyle(
+                          fontSize: 11 * scale,
+                          color: AppTheme.textMuted,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(child: body),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool accent;
+  final VoidCallback onTap;
+  const _ActionPill({
+    required this.icon,
+    required this.label,
+    required this.accent,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TvInkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+      child: Container(
+        width: 148,
+        height: 38,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: accent ? AppTheme.accent : AppTheme.bgCard,
+          borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: AppTheme.textPrimary),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

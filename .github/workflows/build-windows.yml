@@ -1,0 +1,39 @@
+name: Build EUB Windows
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "windows/**"
+      - "tools/**"
+      - "packaging/**"
+      - "pubspec.*"
+      - ".github/workflows/build-windows.yml"
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    env:
+      FLUTTER_SUPPRESS_ANALYTICS: 'true'
+      DASH__SUPPRESS_ANALYTICS: 'true'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install pinned Flutter SDK
+        shell: pwsh
+        run: ./tools/bootstrap-flutter.ps1
+      - name: Test native playback and build installer
+        shell: pwsh
+        run: ./tools/build-windows.ps1 -Installer
+      - name: Collect build outputs and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: EUB-Windows-build-output
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
