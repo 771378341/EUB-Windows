@@ -1,31 +1,35 @@
-# EUB弹幕 Windows 0.1.0 测试版
+# EUB弹幕 Windows 0.1.1 测试版
 
 发布日期：2026-10-19。适用 Windows 10/11 x64。
 
-## 安装与运行
+## 本次更新
 
-- 安装版：运行 EUBDanmaku-0.1.0-Windows-x64-setup.exe，按提示安装。默认安装到当前用户目录。
-- 便携版：将 EUBDanmaku-0.1.0-Windows-x64-portable.zip 完整解压，再运行 EUBDanmaku.exe。必须保留 data 文件夹和所有 DLL，不能单独复制 EXE。
-- 安装与卸载界面尚未做人工实机检查。本测试版未签名。
+- 播放页顶部增加置顶与 Mini 小窗按钮。
+- 普通窗口最小尺寸由 960×600 改为 640×400。
+- Mini 默认 480×270，最小 320×180，隐藏系统标题栏；拖动片名区域可移动窗口。
+- Mini 默认置顶，可手动取消。退出时恢复原来的窗口大小、最大化状态和置顶偏好。
+- 小窗底部采用紧凑控制栏；更多菜单提供速度、比例、弹幕设置、选集和全屏。
+- Esc 或恢复窗口按钮退出 Mini；F/F11 可从 Mini 进入全屏。搜索、历史和退出播放页时恢复普通窗口。
 
-## 键鼠操作
+## 下载与安装
 
-空格暂停/播放；左右方向键前后跳转 10 秒；上下方向键调整应用内音量；M 静音；双击视频或按 F/F11 切换全屏；Esc 退出视频全屏；Ctrl+K 搜索；Ctrl+H 打开历史。输入文字或操作按钮时，播放器快捷键会避让。
+下载：https://github.com/771378341/EUB-Windows/actions/runs/39218460920/artifacts/12171250938
 
-## 已验证与限制
+GitHub 下载包名为 EUB-Windows-build-output，解压后运行 EUBDanmaku-0.1.1-Windows-x64-setup.exe。安装前关闭旧版本。便携用户请完整解压内含的 EUBDanmaku-0.1.1-Windows-x64-portable.zip，保留 data 文件夹及所有 DLL。
 
-GitHub Windows 构建成功，265 项单元/组件测试通过，修改文件静态检查通过。Windows 原生测试完成窗口启动、进入和退出全屏、本地 H.264 视频初始化、播放进度前进和解码器释放。Release 程序、便携 ZIP 和 Inno Setup 安装程序均已生成。
+程序未签名。安装升级、不同显示缩放比例和远程视频源仍需用户电脑验证。
 
-本测试版采用软件解码及软件视频渲染，避免硬件解码设备不可用导致视频无法打开；高分辨率视频 CPU 占用可能偏高。远程视频源、弹幕同步、长时间连续播放、安装升级与卸载仍待用户电脑验证。
+## 验证与构建溯源
 
-源代码和许可证包含在源码压缩包内。原项目 PolyForm Noncommercial 许可证保持不变；Windows 播放桥接部分保留 media-kit 的 MIT 许可。手机端和 TV 端各自版本不受影响。
+静态检查通过；268 项单元/组件测试及 1 项 Windows 原生集成测试通过。原生测试包含窗口启动、全屏切换、置顶、Mini 尺寸和窗口状态恢复、本地 H.264 播放及切换 Mini 后继续播放。
 
-## 构建溯源
+Release 程序、便携 ZIP、Inno Setup 安装包、SHA256SUMS.txt 和构建日志均已生成。
 
-二进制对应提交：2675c0fe912339816e3feb2b9ba8a27fe247aeb7。
-构建记录：https://github.com/771378341/EUB-Windows/actions/runs/39212589047
+二进制对应提交：68228f1db08e5c396cecec380ae7366c45334e25
+构建记录：https://github.com/771378341/EUB-Windows/actions/runs/39218460920
 源码仓库：https://github.com/771378341/EUB-Windows
+Actions 下载包 SHA-256：f962f3fbd02d1994607a18c3856133fff8bebf9e1f3beb571a284063d06a90aa
 
-SHA256SUMS.txt 是 CI 生成的安装包和便携版校验值，下载后可用 PowerShell Get-FileHash -Algorithm SHA256 核对。
+本版本继续使用软件解码和软件视频渲染；高分辨率播放可能增加 CPU 占用。原项目 PolyForm Noncommercial 许可证及 Windows 播放桥接的 MIT 许可均保留。后续构建与合并上游流程见 WINDOWS-README.md。
 
-重新构建和后续合并上游的流程见 WINDOWS-README.md。此归档保留测试代码、打包脚本、工作流、许可证及构建日志。
+此版本已保存到 GitHub，尚未同步 Google Drive；原 0.1.0 归档保留。
