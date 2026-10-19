@@ -72,7 +72,15 @@ class WindowsMediaKitVideoPlayer extends VideoPlayerPlatform {
   Future<int?> create(DataSource dataSource) async {
     final player = Player();
     final completer = Completer();
-    final videoController = VideoController(player);
+    // This preview uses CPU decoding/rendering so systems without a
+    // usable Direct3D hardware decoder can still open videos.
+    final videoController = VideoController(
+      player,
+      configuration: const VideoControllerConfiguration(
+        hwdec: 'no',
+        enableHardwareAcceleration: false,
+      ),
+    );
     // NOTE: [StreamController] without broadcast buffers events.
     final streamController = StreamController<VideoEvent>();
     final streamSubscriptions = <StreamSubscription>[];
