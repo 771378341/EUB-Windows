@@ -13,8 +13,9 @@ void main() {
   testWidgets('Windows launches, toggles fullscreen and decodes H264',
       (tester) async {
     expect(Platform.isWindows, isTrue);
+    final originalPlatform = debugDefaultTargetPlatformOverride;
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    try {
 
     // Native video setup schedules texture creation after a Flutter frame.
     // Keep pumping while plugin futures are pending; awaiting them without
@@ -95,6 +96,9 @@ void main() {
     } finally {
       await tester.pumpWidget(const SizedBox.shrink());
       await nativeStep('dispose decoder', controller.dispose);
+    }
+    } finally {
+      debugDefaultTargetPlatformOverride = originalPlatform;
     }
   }, timeout: const Timeout(Duration(minutes: 4)));
 }
