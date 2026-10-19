@@ -16,14 +16,34 @@ void main() {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
 
-    // Use real asynchronous work for native plugins and give each operation
-    // a deadline, so an unresponsive plugin cannot consume the whole CI job.
+    // Native video setup schedules texture creation after a Flutter frame.
+    // Keep pumping while plugin futures are pending; awaiting them without
+    // frames deadlocks this integration test even though startup succeeds.
     Future<void> nativeStep(String label, Future<void> Function() action) async {
       debugPrint('WINDOWS_SMOKE START: $label');
-      await tester.runAsync(() => action().timeout(
-        const Duration(seconds: 30),
-        onTimeout: () => throw TimeoutException('Windows smoke: $label'),
-      ));
+      var complete = false;
+      Object? failure;
+      await tester.runAsync(() async {
+        action().then<void>((_) {
+          complete = true;
+        }, onError: (Object error, StackTrace stack) {
+          failure = error;
+          complete = true;
+        });
+      });
+      final deadline = DateTime.now().add(const Duration(seconds: 30));
+      while (!complete && DateTime.now().isBefore(deadline)) {
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+      }
+      if (!complete) {
+        throw TimeoutException('Windows smoke: $label');
+      }
+      if (failure != null) {
+        throw TestFailure('Windows smoke $label failed: $failure');
+      }
       final error = tester.takeException();
       if (error != null) {
         throw TestFailure('Windows smoke $label failed: $error');
