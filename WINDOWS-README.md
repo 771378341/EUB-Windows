@@ -1,6 +1,8 @@
 # EUB弹幕 Windows 开发预览版 0.1.0
 
-状态：Windows 适配源码与构建流程已准备；尚未在 Windows 上编译、运行或验证安装包。此压缩包不是可执行程序，不包含已生成的 EXE。
+状态：2026-10-19 已在 GitHub Windows 环境完成 Release 编译和安装包生成。265 项单元/组件测试及 1 项 Windows 原生窗口、全屏、本地 H.264 播放测试通过。版本仍为 0.1.0 测试版，安装/卸载和远程视频源仍需在用户电脑上验证。
+
+本测试版使用软件解码和软件视频渲染，兼容没有可用硬件解码设备的 Windows 环境；高分辨率播放会增加 CPU 占用。构建记录：https://github.com/771378341/EUB-Windows/actions/runs/39212589047 。
 
 ## 适配内容
 
@@ -28,9 +30,9 @@ powershell -ExecutionPolicy Bypass -File .\toolsuild-windows.ps1 -Installer
 
 ## GitHub 云端构建
 
-连接 GitHub 后，将本项目完整内容提交到自己的仓库根目录，包含 .github/workflows/build-windows.yml。Actions 中手动运行 Build EUB Windows。工作流只支持手动触发，使用 windows-2022，不会自动发布公开下载或创建 Release。
+连接 GitHub 后，将本项目完整内容提交到自己的仓库根目录，包含 .github/workflows/build-windows.yml。Actions 中手动运行 Build EUB Windows。工作流支持手动触发及主分支相关代码和测试文件变更触发，使用 windows-2022，不会自动发布公开下载或创建 Release。
 
-构建成功后，从对应运行的 Artifacts 下载 EUB-Windows-build-output，内含 dist 文件。若运行失败，只能将日志作为失败记录，不能将其视为已完成安装包。当前尚未创建远程仓库，也没有启动过云端构建。
+构建成功后，从对应运行的 Artifacts 下载 EUB-Windows-build-output，内含 dist 文件。若运行失败，只能将日志作为失败记录，不能将其视为已完成安装包。源码仓库：https://github.com/771378341/EUB-Windows 。本测试版二进制对应提交 2675c0fe912339816e3feb2b9ba8a27fe247aeb7。
 
 ## 版本与维护
 
