@@ -13,7 +13,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets('Windows launches, toggles fullscreen and decodes H264',
       (tester) async {
-    expect(Platform.isWindows, isTrue);
+    expectSync(Platform.isWindows, isTrue);
     final originalPlatform = debugDefaultTargetPlatformOverride;
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
     try {
@@ -55,52 +55,52 @@ void main() {
 
     await nativeStep('application startup', app.main);
     await tester.pump();
-    expect(find.byType(app.EcoHubApp), findsOneWidget);
+    expectSync(find.byType(app.EcoHubApp), findsOneWidget);
     // Remove the network-dependent splash before testing local playback.
     await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
 
     await nativeStep('enter fullscreen', () async {
       await windowManager.setFullScreen(true);
-      expect(await windowManager.isFullScreen(), isTrue);
+      expectSync(await windowManager.isFullScreen(), isTrue);
     });
     await nativeStep('leave fullscreen', () async {
       await windowManager.setFullScreen(false);
-      expect(await windowManager.isFullScreen(), isFalse);
+      expectSync(await windowManager.isFullScreen(), isFalse);
     });
 
     await nativeStep('pin and Mini window restore', () async {
       await AppWindow.setPinned(false);
       final bounds = await windowManager.getBounds();
       await AppWindow.setPinned(true);
-      expect(await windowManager.isAlwaysOnTop(), isTrue);
+      expectSync(await windowManager.isAlwaysOnTop(), isTrue);
       await AppWindow.setPinned(false);
       await AppWindow.enterMini();
-      expect(AppWindow.isMini.value, isTrue);
-      expect(await windowManager.isAlwaysOnTop(), isTrue);
+      expectSync(AppWindow.isMini.value, isTrue);
+      expectSync(await windowManager.isAlwaysOnTop(), isTrue);
       final miniBounds = await windowManager.getBounds();
-      expect(miniBounds.width, closeTo(480, 2));
-      expect(miniBounds.height, closeTo(270, 2));
+      expectSync(miniBounds.width, closeTo(480, 2));
+      expectSync(miniBounds.height, closeTo(270, 2));
       await AppWindow.togglePin();
-      expect(await windowManager.isAlwaysOnTop(), isFalse);
+      expectSync(await windowManager.isAlwaysOnTop(), isFalse);
       await AppWindow.exitMini();
-      expect(AppWindow.isMini.value, isFalse);
-      expect(await windowManager.isAlwaysOnTop(), isFalse);
+      expectSync(AppWindow.isMini.value, isFalse);
+      expectSync(await windowManager.isAlwaysOnTop(), isFalse);
       final restored = await windowManager.getBounds();
-      expect(restored.width, closeTo(bounds.width, 2));
-      expect(restored.height, closeTo(bounds.height, 2));
-      expect(restored.left, closeTo(bounds.left, 2));
-      expect(restored.top, closeTo(bounds.top, 2));
+      expectSync(restored.width, closeTo(bounds.width, 2));
+      expectSync(restored.height, closeTo(bounds.height, 2));
+      expectSync(restored.left, closeTo(bounds.left, 2));
+      expectSync(restored.top, closeTo(bounds.top, 2));
     });
 
     const path = String.fromEnvironment('EUB_TEST_MEDIA_PATH');
-    expect(path, isNotEmpty);
-    expect(File(path).existsSync(), isTrue);
+    expectSync(path, isNotEmpty);
+    expectSync(File(path).existsSync(), isTrue);
     final controller = VideoPlayerController.file(File(path));
     try {
       await nativeStep('initialize local H264', () async {
         await controller.initialize();
-        expect(controller.value.duration, greaterThan(Duration.zero));
-        expect(controller.value.size.width, 320);
+        expectSync(controller.value.duration, greaterThan(Duration.zero));
+        expectSync(controller.value.size.width, 320);
       });
       await tester.pumpWidget(
         MaterialApp(home: Scaffold(body: VideoPlayer(controller))),
@@ -122,11 +122,11 @@ void main() {
         await controller.setLooping(true);
         await controller.play();
         await AppWindow.enterMini();
-        expect(controller.value.isInitialized, isTrue);
-        expect(controller.value.isPlaying, isTrue);
+        expectSync(controller.value.isInitialized, isTrue);
+        expectSync(controller.value.isPlaying, isTrue);
         await AppWindow.exitMini();
-        expect(controller.value.isInitialized, isTrue);
-        expect(controller.value.isPlaying, isTrue);
+        expectSync(controller.value.isInitialized, isTrue);
+        expectSync(controller.value.isPlaying, isTrue);
         await controller.pause();
         await controller.setLooping(false);
       });
