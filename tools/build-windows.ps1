@@ -26,7 +26,18 @@ try {
     Invoke-Flutter -Arguments @('analyze', '--no-pub', 'lib/desktop', 'lib/main.dart', 'lib/utils/app_settings_manager.dart', 'lib/services/pip_manager.dart', 'lib/components/player/player_device_control_mixin.dart', 'lib/components/player/player_playback_controller.dart', 'lib/components/player/player_gesture_handler.dart', 'lib/components/player/video_player_widget.dart', 'lib/pages/play_page.dart', 'lib/pages/live_play_page.dart', 'lib/pages/custom_player_page.dart', 'lib/pages/settings_page.dart', 'lib/tv/tv_home_design.dart', 'test/windows_input_test.dart', 'integration_test/windows_smoke_test.dart')
     Invoke-Flutter -Arguments @('test', '--no-pub')
     $Fixture = Join-Path $Root 'integration_test\fixtures\smoke.mp4'
-    Invoke-Flutter -Arguments @('test', 'integration_test/windows_smoke_test.dart', '-d', 'windows', "--dart-define=EUB_TEST_MEDIA_PATH=$Fixture")
+    # Bound the entire native test process, including compilation and shutdown.
+    $FlutterCommand = (Get-Command flutter).Source
+    $SmokeCommand = '""{0}" test --no-pub integration_test/windows_smoke_test.dart -d windows --timeout 4m "--dart-define=EUB_TEST_MEDIA_PATH={1}""' -f $FlutterCommand, $Fixture
+    Write-Host 'Starting native smoke test (10 minute process deadline).'
+    $Smoke = Start-Process -FilePath $env:ComSpec -ArgumentList ('/d /s /c ' + $SmokeCommand) -NoNewWindow -PassThru
+    if (-not $Smoke.WaitForExit(600000)) {
+        & taskkill.exe /PID $Smoke.Id /T /F
+        throw 'Native smoke test exceeded 10 minutes. See the last WINDOWS_SMOKE stage in the log.'
+    }
+    $Smoke.Refresh()
+    if ($Smoke.ExitCode -ne 0) { throw "Native smoke test failed with exit code $($Smoke.ExitCode)." }
+    Write-Host 'Native smoke test completed; building Release installer.'
     Invoke-Flutter -Arguments @('build', 'windows', '--release', '--no-pub')
     $Release = Join-Path $Root 'build\windows\x64\runner\Release'
     if (-not (Test-Path (Join-Path $Release 'EUBDanmaku.exe'))) { throw 'Release executable is missing.' }
