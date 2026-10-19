@@ -23,7 +23,7 @@ try {
     & (Join-Path $PSScriptRoot 'bootstrap-flutter.ps1')
     Invoke-Flutter -Arguments @('config', '--enable-windows-desktop')
     Invoke-Flutter -Arguments @('pub', 'get', '--enforce-lockfile')
-    Invoke-Flutter -Arguments @('analyze', '--no-pub', 'lib/desktop', 'lib/main.dart', 'lib/utils/app_settings_manager.dart', 'lib/services/pip_manager.dart', 'lib/components/player/player_device_control_mixin.dart', 'lib/components/player/player_playback_controller.dart', 'lib/components/player/player_gesture_handler.dart', 'lib/components/player/video_player_widget.dart', 'lib/pages/play_page.dart', 'lib/pages/live_play_page.dart', 'lib/pages/custom_player_page.dart', 'lib/pages/settings_page.dart', 'lib/tv/tv_home_design.dart', 'test/windows_input_test.dart', 'integration_test/windows_smoke_test.dart')
+    Invoke-Flutter -Arguments @('analyze', '--no-pub', 'lib/desktop', 'lib/main.dart', 'lib/utils/app_settings_manager.dart', 'lib/services/pip_manager.dart', 'lib/components/player/player_device_control_mixin.dart', 'lib/components/player/player_playback_controller.dart', 'lib/components/player/player_gesture_handler.dart', 'lib/components/player/video_player_widget.dart', 'lib/pages/play_page.dart', 'lib/pages/live_play_page.dart', 'lib/pages/custom_player_page.dart', 'lib/pages/settings_page.dart', 'lib/tv/tv_home_design.dart', 'test/windows_input_test.dart', 'test/windows_mini_layout_test.dart', 'integration_test/windows_smoke_test.dart')
     Invoke-Flutter -Arguments @('test', '--no-pub')
     $Fixture = Join-Path $Root 'integration_test\fixtures\smoke.mp4'
     # Bound the entire native test process, including compilation and shutdown.

@@ -1,3 +1,4 @@
+import '../../desktop/app_window.dart';
 import '../../tv/tv_controls.dart';
 import 'package:flutter/material.dart';
 import '../../common/app_theme.dart';
@@ -396,13 +397,13 @@ class PlayerSkinView extends StatelessWidget {
               onRetry: onRetry,
               onErrorDetail: onErrorDetail,
             ),
-          if (isFull)
+          if (isFull || AppWindow.isWindows)
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               child: PlayerTopBar(
-                isFull: isFull,
+                isFull: isFull || AppWindow.isWindows,
                 showHud: showHud,
                 errorText: errorText,
                 title: title,
@@ -421,7 +422,7 @@ class PlayerSkinView extends StatelessWidget {
                 onPip: onPip,
               ),
             ),
-          if (!isFull && (showBack || canCast || onPip != null))
+          if (!isFull && !AppWindow.isWindows && (showBack || canCast || onPip != null))
             Positioned(
               left: _edge(6, leftInset),
               right: _edge(6, rightInset),

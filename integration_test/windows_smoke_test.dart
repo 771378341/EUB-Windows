@@ -7,6 +7,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:video_player/video_player.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:ecohub_android/main.dart' as app;
+import 'package:ecohub_android/desktop/app_window.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -67,6 +68,30 @@ void main() {
       expect(await windowManager.isFullScreen(), isFalse);
     });
 
+    await nativeStep('pin and Mini window restore', () async {
+      await AppWindow.setPinned(false);
+      final bounds = await windowManager.getBounds();
+      await AppWindow.setPinned(true);
+      expect(await windowManager.isAlwaysOnTop(), isTrue);
+      await AppWindow.setPinned(false);
+      await AppWindow.enterMini();
+      expect(AppWindow.isMini.value, isTrue);
+      expect(await windowManager.isAlwaysOnTop(), isTrue);
+      final miniBounds = await windowManager.getBounds();
+      expect(miniBounds.width, closeTo(480, 2));
+      expect(miniBounds.height, closeTo(270, 2));
+      await AppWindow.togglePin();
+      expect(await windowManager.isAlwaysOnTop(), isFalse);
+      await AppWindow.exitMini();
+      expect(AppWindow.isMini.value, isFalse);
+      expect(await windowManager.isAlwaysOnTop(), isFalse);
+      final restored = await windowManager.getBounds();
+      expect(restored.width, closeTo(bounds.width, 2));
+      expect(restored.height, closeTo(bounds.height, 2));
+      expect(restored.left, closeTo(bounds.left, 2));
+      expect(restored.top, closeTo(bounds.top, 2));
+    });
+
     const path = String.fromEnvironment('EUB_TEST_MEDIA_PATH');
     expect(path, isNotEmpty);
     expect(File(path).existsSync(), isTrue);
@@ -92,6 +117,18 @@ void main() {
           await Future<void>.delayed(const Duration(milliseconds: 100));
         }
         throw TestFailure('Local H264 playback position did not advance.');
+      });
+      await nativeStep('Mini preserves the playing decoder', () async {
+        await controller.setLooping(true);
+        await controller.play();
+        await AppWindow.enterMini();
+        expect(controller.value.isInitialized, isTrue);
+        expect(controller.value.isPlaying, isTrue);
+        await AppWindow.exitMini();
+        expect(controller.value.isInitialized, isTrue);
+        expect(controller.value.isPlaying, isTrue);
+        await controller.pause();
+        await controller.setLooping(false);
       });
     } finally {
       await tester.pumpWidget(const SizedBox.shrink());

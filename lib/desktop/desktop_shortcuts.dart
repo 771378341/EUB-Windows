@@ -14,8 +14,14 @@ class DesktopShortcuts extends StatelessWidget {
   @override
   Widget build(BuildContext context) => CallbackShortcuts(
     bindings: {
-      const SingleActivator(LogicalKeyboardKey.keyK, control: true): onSearch,
-      const SingleActivator(LogicalKeyboardKey.keyH, control: true): onHistory,
+      const SingleActivator(LogicalKeyboardKey.keyK, control: true): () async {
+        await AppWindow.exitMini();
+        onSearch();
+      },
+      const SingleActivator(LogicalKeyboardKey.keyH, control: true): () async {
+        await AppWindow.exitMini();
+        onHistory();
+      },
       const SingleActivator(LogicalKeyboardKey.f11): AppWindow.toggleFullscreen,
     },
     child: child,

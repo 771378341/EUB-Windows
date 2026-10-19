@@ -223,6 +223,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
 
   @override
   void dispose() {
+    if (AppWindow.isWindows) unawaited(AppWindow.exitMini());
     _danmakuNoticeTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _pipCoord.dispose();

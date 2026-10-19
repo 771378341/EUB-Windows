@@ -130,7 +130,17 @@ class _DesktopPlayerInputState extends State<DesktopPlayerInput> {
     }
     final key = event.logicalKey;
     if (key == LogicalKeyboardKey.f11 || key == LogicalKeyboardKey.keyF) {
-      if (event is KeyDownEvent) widget.onToggleFullscreen();
+      if (event is KeyDownEvent) {
+        if (AppWindow.isMini.value) {
+          AppWindow.setFullscreen(true);
+        } else {
+          widget.onToggleFullscreen();
+        }
+      }
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.escape && AppWindow.isMini.value) {
+      if (event is KeyDownEvent) AppWindow.exitMini();
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.escape && widget.isFullscreen) {
