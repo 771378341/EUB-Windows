@@ -351,7 +351,7 @@ class _PlayerBottomBarState extends State<PlayerBottomBar> {
                 case 'scale': widget.onScale?.call(); break;
                 case 'danmaku': widget.onOpenDanmakuSettings?.call(); break;
                 case 'episodes': widget.onOpenEpisodes?.call(); break;
-                case 'fullscreen': widget.onToggleFull(); break;
+                case 'fullscreen': AppWindow.toggleFullscreen(); break;
               }
             },
             itemBuilder: (_) => [
